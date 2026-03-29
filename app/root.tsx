@@ -11,6 +11,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { useEffect, useState } from "react";
 import { getCurrentUser, signIn as puterSignIn, signOut as puterSignOut } from "lib/puter.action";
+import Navbar from "components/Navbar";
 
 export const links: Route.LinksFunction = () => [
 	{ rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -87,10 +88,11 @@ export default function App() {
     }
 	
 	return (
-        <main className="min-h-screen bg-background text-foreground relaitve z-10">
+        <main className="min-h-screen bg-background text-foreground relative z-10">
+            <Navbar />
             <Outlet
                 context={{ ...authState, refreshAuth, signIn, signOut }}
-            />;
+            />
         </main>
     )
 }
