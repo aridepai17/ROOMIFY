@@ -18,7 +18,7 @@ const Button = ({
     const baseClass = 'btn';
     const variantClass = `btn--${variant}`;
     const sizeClass = `btn--${size}`;
-    const fullWidthClass = fullWidth ? 'btn-full' : '';
+    const fullWidthClass = fullWidth ? 'btn--full' : '';
 
     const combinedClasses = [
         baseClass,
