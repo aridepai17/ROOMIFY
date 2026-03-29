@@ -1,6 +1,6 @@
 import Navbar from "components/Navbar";
 import type { Route } from "./+types/home";
-import { ArrowUpRight, Clock, Layers, Upload } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Clock, Layers } from "lucide-react";
 import Button from "components/ui/Button";
 
 export function meta({}: Route.MetaArgs) {
