@@ -1,11 +1,19 @@
 export const HOSTING_CONFIG_KEY = "roomify_hosting_config";
 export const HOSTING_DOMAIN_SUFFIX = ".puter.site";
+const SUBDOMAIN_REGEX = /^[a-z0-9-]+$/i;
+
+const isValidSubdomain = (subdomain: string): boolean =>
+	SUBDOMAIN_REGEX.test(subdomain) && !subdomain.includes(".") && !subdomain.includes("/");
 
 export const isHostedUrl = (value: unknown): value is string => {
 	if (typeof value !== "string") return false;
 	try {
 		const url = new URL(value);
-		return url.hostname.endsWith(HOSTING_DOMAIN_SUFFIX);
+		if (url.protocol !== "https:") return false;
+		if (!url.hostname.endsWith(HOSTING_DOMAIN_SUFFIX)) return false;
+		const subdomain = url.hostname.slice(0, -HOSTING_DOMAIN_SUFFIX.length);
+		if (!subdomain || !isValidSubdomain(subdomain)) return false;
+		return true;
 	} catch {
 		return false;
 	}
@@ -14,10 +22,12 @@ export const isHostedUrl = (value: unknown): value is string => {
 export const createHostingSlug = () =>
 	`roomify-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-const normalizeHost = (subdomain: string) =>
-	subdomain.endsWith(HOSTING_DOMAIN_SUFFIX)
+const normalizeHost = (subdomain: string): string | null => {
+	if (!subdomain || !isValidSubdomain(subdomain)) return null;
+	return subdomain.endsWith(HOSTING_DOMAIN_SUFFIX)
 		? subdomain
 		: `${subdomain}${HOSTING_DOMAIN_SUFFIX}`;
+};
 
 export const getHostedUrl = (
 	hosting: { subdomain: string },
@@ -25,6 +35,7 @@ export const getHostedUrl = (
 ): string | null => {
 	if (!hosting?.subdomain) return null;
 	const host = normalizeHost(hosting.subdomain);
+	if (!host) return null;
 	return `https://${host}/${filePath}`;
 };
 
