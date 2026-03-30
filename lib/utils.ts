@@ -49,7 +49,7 @@ export const dataUrlToBlob = (
 	dataUrl: string,
 ): { blob: Blob; contentType: string } | null => {
 	try {
-		const match = dataUrl.match(/^data:([^;]+)>(;base64)>,([\s\S]*)/i);
+		const match = dataUrl.match(/^data:([^,]*?)(;base64)?,([\s\S]*)$/i);
 		if (!match) return null;
 		const contentType = match[1] || "";
 		const isBase64 = !!match[2];
