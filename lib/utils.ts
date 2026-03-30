@@ -36,7 +36,11 @@ export const getImageExtension = (contentType: string, url: string): string => {
 	const dataMatch = url.match(/^data:image\/([a-z0-9+.-]+);/i);
 	if (dataMatch?.[1]) {
 		const ext = dataMatch[1].toLowerCase();
-		return ext === "jpeg" ? "jpg" : ext;
+		return ext === "jpeg" || ext === "jpg"
+			? "jpg"
+			: ext === "svg+xml"
+				? "svg"
+				: ext;
 	}
 
 	const extMatch = url.match(/\.([a-z0-9]+)(?:$|[?#])/i);
