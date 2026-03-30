@@ -11,15 +11,15 @@ import {
 
 export const getOrCreateHostingConfig =
 	async (): Promise<HostingConfig | null> => {
-		const existing = (await puter.kv.get(
-			HOSTING_CONFIG_KEY,
-		)) as HostingConfig | null;
+        try { 
+            const existing = (await puter.kv.get(
+                HOSTING_CONFIG_KEY,
+            )) as HostingConfig | null;
 
-		if (existing?.subdomain) return { subdomain: existing.subdomain };
+            if (existing?.subdomain) return { subdomain: existing.subdomain };
 
-		const subdomain = createHostingSlug();
+            const subdomain = createHostingSlug();
 
-		try {
 			const created = await puter.hosting.create(subdomain, ".");
 
 			const record = { subdomain: created.subdomain };
@@ -28,7 +28,7 @@ export const getOrCreateHostingConfig =
 
 			return record;
 		} catch (e) {
-			console.warn(`Could not find subdomain: ${e}`);
+			console.warn("Failed to load or create hosting config", e);
 			return null;
 		}
 	};
@@ -41,6 +41,10 @@ export const uploadImageToHosting = async ({
 }: StoreHostedImageParams): Promise<HostedAsset | null> => {
 	if (!hosting || !url) return null;
 	if (isHostedUrl(url)) return { url };
+    if (!/^[A-Za-z0-9_-]+$/.test(projectId)) {
+        console.warn("Invalid project id for hosted upload");
+        return null;
+    }
 
 	try {
 		const resolved =
