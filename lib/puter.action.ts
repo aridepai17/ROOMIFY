@@ -6,12 +6,78 @@ import {
 	uploadImageToHosting,
 } from "./puter.hosting";
 
-export const signIn = async () => await puter.auth.signIn();
+// Initialize Puter.js if not already initialized
+let isPuterInitializing = false;
+let puterInitPromise: Promise<void> | null = null;
 
-export const signOut = () => puter.auth.signOut();
+const initPuter = async (): Promise<void> => {
+    if (isPuterInitializing && puterInitPromise) {
+        return puterInitPromise;
+    }
+    
+    if (puter.auth) {
+        return; // Already initialized
+    }
+    
+    isPuterInitializing = true;
+    puterInitPromise = new Promise((resolve, reject) => {
+        const checkInit = () => {
+            if (puter.auth) {
+                console.log('Puter.js initialized successfully');
+                resolve();
+            } else {
+                setTimeout(checkInit, 100);
+            }
+        };
+        
+        // Start checking after a short delay
+        setTimeout(checkInit, 500);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            if (!puter.auth) {
+                reject(new Error('Puter.js initialization timeout'));
+            }
+        }, 10000);
+    });
+    
+    try {
+        await puterInitPromise;
+    } finally {
+        isPuterInitializing = false;
+        puterInitPromise = null;
+    }
+};
+
+export const signIn = async () => {
+	try {
+		await initPuter();
+		
+		if (!puter.auth) {
+			throw new Error('Puter.js auth not available');
+		}
+		return await puter.auth.signIn();
+	} catch (error) {
+		console.error('Puter signIn error:', error);
+		throw error;
+	}
+};
+
+export const signOut = () => {
+	try {
+		if (!puter.auth) {
+			throw new Error('Puter.js auth not available');
+		}
+		return puter.auth.signOut();
+	} catch (error) {
+		console.error('Puter signOut error:', error);
+		throw error;
+	}
+};
 
 export const getCurrentUser = async () => {
 	try {
+		await initPuter();
 		return await puter.auth.getUser();
 	} catch {
 		return null;
