@@ -29,15 +29,22 @@ export const generate3DView = async ({ sourceImage }: Generate3DViewParams) => {
 	if (!mimeType || !base64Data)
 		throw new Error("Invalid source image payload");
 
-	const response = await puter.ai.txt2img(ROOMIFY_RENDER_PROMPT, {
-		provider: "gemini",
-		model: "gemini-2.5-flash-image-preview",
-		input_image: base64Data,
-		input_image_mime_type: mimeType,
-		ratio: { w: 1024, h: 1024 },
-	});
+	let rawImageUrl: string | null = null;
 
-	const rawImageUrl = (response as HTMLImageElement).src ?? null;
+	try {
+		const response = await puter.ai.txt2img(ROOMIFY_RENDER_PROMPT, {
+			provider: "gemini",
+			model: "gemini-2.5-flash-image-preview",
+			input_image: base64Data,
+			input_image_mime_type: mimeType,
+			ratio: { w: 1024, h: 1024 },
+		});
+
+		rawImageUrl = (response as HTMLImageElement).src ?? null;
+	} catch (error) {
+		console.error("AI generation failed:", error);
+		return { renderedImage: null, renderedPath: undefined };
+	}
 
 	if (!rawImageUrl) return { renderedImage: null, renderedPath: undefined };
 
