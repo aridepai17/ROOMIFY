@@ -10,8 +10,13 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { useEffect, useState } from "react";
-import { getCurrentUser, signIn as puterSignIn, signOut as puterSignOut } from "lib/puter.action";
-import Navbar from "components/Navbar";
+import {
+	getCurrentUser,
+	signIn as puterSignIn,
+	signOut as puterSignOut,
+} from "../lib/puter.action";
+import Navbar from "../components/Navbar";
+import puter from "@heyputer/puter.js";
 
 export const links: Route.LinksFunction = () => [
 	{ rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -48,53 +53,85 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 const DEFAULT_AUTH_STATE: AuthState = {
-    isSignedIn: false,
-    userName: null,
-    userId: null,
-}
+	isSignedIn: false,
+	userName: null,
+	userId: null,
+};
 
 export default function App() {
-    const [authState, setAuthState] = useState<AuthState>(DEFAULT_AUTH_STATE);
+	const [authState, setAuthState] = useState<AuthState>(DEFAULT_AUTH_STATE);
 
-    const refreshAuth = async () => {
-        try { 
-            const user = await getCurrentUser();
+	const refreshAuth = async () => {
+		try {
+			const user = await getCurrentUser();
 
-            setAuthState({
-                isSignedIn: !!user,
-                userName: user?.username || null,
-                userId: user?.uuid || null,
-            })
+			setAuthState({
+				isSignedIn: !!user,
+				userName: user?.username || null,
+				userId: user?.uuid || null,
+			});
 
-            return !!user;
-        } catch {
-            setAuthState(DEFAULT_AUTH_STATE);
-            return false;
-        }
-    }
+			return !!user;
+		} catch {
+			setAuthState(DEFAULT_AUTH_STATE);
+			return false;
+		}
+	};
 
-    useEffect(() => {
-        refreshAuth()
-    }, []);
+	useEffect(() => {
+		// Initialize Puter.js with proper configuration
+		const initPuter = async () => {
+			try {
+				// Check if environment variables are loaded
+				console.log(
+					"VITE_PUTER_WORKER_URL:",
+					import.meta.env.VITE_PUTER_WORKER_URL,
+				);
 
-    const signIn = async () => {
-        await puterSignIn();
-        return await refreshAuth();
-    }
+				// Check if Puter.js is available
+				if (typeof puter !== "undefined") {
+					console.log("Puter.js loaded:", puter);
 
-    const signOut = async () => {
-        puterSignOut();
-        return await refreshAuth();
-    }
-	
+					// Configure Puter.js to use your worker if available
+					const workerUrl = import.meta.env.VITE_PUTER_WORKER_URL;
+					if (workerUrl) {
+						const workerDomain = workerUrl
+							.replace("https://", "")
+							.replace("http://", "");
+						console.log("Worker domain:", workerDomain);
+					}
+
+					console.log("Puter.js auth available:", !!puter.auth);
+
+					// Now try to refresh auth
+					await refreshAuth();
+				} else {
+					console.error("Puter.js not loaded");
+				}
+			} catch (error) {
+				console.error("Error initializing Puter.js:", error);
+			}
+		};
+
+		initPuter();
+	}, []);
+
+	const signIn = async () => {
+		await puterSignIn();
+		return await refreshAuth();
+	};
+
+	const signOut = async () => {
+		puterSignOut();
+		return await refreshAuth();
+	};
+
 	return (
-        <main className="min-h-screen bg-background text-foreground relative z-10">
-            <Navbar />
-            <Outlet
-                context={{ ...authState, refreshAuth, signIn, signOut }}
-            />
-        </main>
-    )
+		<main className="min-h-screen bg-background text-foreground relative z-10">
+			<Navbar />
+			<Outlet context={{ ...authState, refreshAuth, signIn, signOut }} />
+		</main>
+	);
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
